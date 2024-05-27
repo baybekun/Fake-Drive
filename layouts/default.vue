@@ -80,22 +80,17 @@
               </div>
               <div class="container">
                 <div
-                  class="image"
-                  v-for="(image, index) in images"
+                  v-for="(path, index) in folderPaths"
                   :key="index"
+                  class="file-path"
                 >
                   <span class="delete" @click="deleteImage(index)"
                     >&times;</span
                   >
-                  <img :src="image.url" />
+                  <p>{{ path }}</p>
                 </div>
               </div>
               <button type="button">Upload</button>
-              <div class="path-container">
-                <p v-for="(path, index) in folderPaths" :key="index">
-                  {{ path }}
-                </p>
-              </div>
             </div>
           </div>
         </div>
@@ -141,15 +136,11 @@ export default defineComponent({
     async processFiles(files) {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        this.images.push({
-          name: file.name,
-          url: URL.createObjectURL(file),
-          type: file.type.split("/")[0],
-        });
+        this.folderPaths.push(file.webkitRelativePath || file.name);
       }
     },
     deleteImage(index) {
-      this.images.splice(index, 1);
+      this.folderPaths.splice(index, 1);
     },
     onDragOver(event) {
       this.isDragging = true;
@@ -359,24 +350,20 @@ export default defineComponent({
   margin-bottom: 8px;
   padding-top: 15px;
 }
-.card .container .image {
-  width: 75px;
-  margin-right: 5px;
-  height: 75px;
-  position: relative;
-  margin-bottom: 8px;
+.card .file-path {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
 }
-.card .container .image img {
-  width: 100%;
-  height: 100%;
-  border-radius: 5px;
+.card .file-path p {
+  margin: 0;
+  padding: 0;
+  margin-left: 10px;
 }
-.card .container .image span {
-  position: absolute;
-  top: -2px;
-  right: 9px;
-  font-size: 20px;
+.card .file-path .delete {
   cursor: pointer;
+  font-size: 20px;
+  color: #353b39;
 }
 .card input,
 .card .drag-area .on-drop,
