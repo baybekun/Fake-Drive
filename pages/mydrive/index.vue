@@ -62,13 +62,32 @@ definePageMeta({
           <div class="show-main col-8">
             <!-- Hiển thị file -->
             <div class="cards">
+              <div class="title-form">
+                <p>Tên</p>
+                <p>Ngày</p>
+                <p>Size</p>
+                <p></p>
+              </div>
               <div
                 v-for="(file, index) in uploadedFiles"
                 :key="index"
                 class="file-item"
               >
                 <p>{{ file.name }}</p>
-                <!-- Hiển thị tên file -->
+                <p>{{ file.date }}</p>
+                <p>{{ file.size }}</p>
+
+                <button @click="toggleDropdown(index)">:</button>
+                <!-- Dropdown -->
+                <div v-if="file.showDropdown" class="dropdown">
+                  <ul>
+                    <li><button @click="editFile(index)">Chia Sẻ</button></li>
+                    <hr />
+                    <li><button @click="deleteFile(index)">Xóa</button></li>
+                    <hr />
+                    <li><button @click="renameFile(index)">Đổi tên</button></li>
+                  </ul>
+                </div>
               </div>
             </div>
           </div>
@@ -103,14 +122,21 @@ export default {
   data() {
     return {
       currentPage: "mydrive",
-      uploadedFiles: [], // Thêm mảng để lưu trữ thông tin về các file đã tải lên
+      uploadedFiles: [
+        { name: "minh1", date: "10/3/2024", size: "20kb" },
+        { name: "minh2", date: "1/3/2024", size: "1kb" },
+      ], // Thêm mảng để lưu trữ thông tin về các file đã tải lên
     };
   },
   async mounted() {
     // Gửi yêu cầu GET để lấy danh sách các file đã tải lên
     try {
       const response = await axios.get("/api/uploaded-files");
-      this.uploadedFiles = response.data; // Lưu trữ danh sách file vào biến uploadedFiles
+      this.uploadedFiles = response.data.map((file) => ({
+        name: file.name,
+        date: file.date,
+        size: file.size,
+      }));
     } catch (error) {
       console.error("Failed to fetch uploaded files:", error);
     }
@@ -118,6 +144,23 @@ export default {
   methods: {
     navigateToPage(page) {
       this.currentPage = page;
+    },
+    toggleDropdown(index) {
+      // Đảo ngược trạng thái hiển thị dropdown cho file tương ứng
+      this.uploadedFiles[index].showDropdown =
+        !this.uploadedFiles[index].showDropdown;
+    },
+    editFile(index) {
+      // Xử lý tùy chọn "Chia Sẻ"
+      console.log("Chia Sẻ", this.uploadedFiles[index]);
+    },
+    deleteFile(index) {
+      // Xử lý tùy chọn "Xóa"
+      console.log("Xóa file", this.uploadedFiles[index]);
+    },
+    renameFile(index) {
+      // Xử lý tùy chọn "Đổi tên"
+      console.log("Đổi tên file", this.uploadedFiles[index]);
     },
   },
 };
@@ -229,11 +272,16 @@ export default {
 }
 /* từng khối hiển thị ở đây */
 .file-item {
-  border: 1px solid #ccc;
+  position: relative;
+  width: 90%;
+  top: 85px;
+  left: 55px;
   border-radius: 5px;
   padding: 10px;
   margin-bottom: 10px;
-  background-color: #f9f9f9;
+  background-color: #dedede;
+  display: flex;
+  justify-content: space-between;
 }
 .file-item p {
   font-size: 16px;
@@ -242,5 +290,16 @@ export default {
 }
 .file-item:hover {
   background-color: #eaeaea;
+}
+.dropdown {
+  position: absolute;
+  z-index: 3;
+  left: 84%;
+  background-color: #fff;
+  width: 14%;
+  height: 81px;
+  border: 2px #d4d4d4 solid;
+  border-radius: 5px;
+  text-align: center;
 }
 </style>
