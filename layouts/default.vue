@@ -42,8 +42,13 @@
                   >Gần Đây</NuxtLink
                 >
               </li>
-              <li :class="{ active: currentPage === 'share' }">
-                <NuxtLink to="/share" @click="navigateToPage('share')"
+              <li :class="{ active: currentPage === 'mydrive' }">
+                <NuxtLink to="/mydrive" @click="navigateToPage('mydrive')"
+                  >Của tôi</NuxtLink
+                >
+              </li>
+              <li :class="{ active: currentPage === 'shares' }">
+                <NuxtLink to="/shares" @click="navigateToPage('shares')"
                   >Được Chia Sẻ</NuxtLink
                 >
               </li>
@@ -90,7 +95,7 @@
                   <p>{{ path }}</p>
                 </div>
               </div>
-              <button type="button">Upload</button>
+              <button type="button" @click="uploadFiles">Upload</button>
             </div>
           </div>
         </div>
@@ -119,13 +124,15 @@
 
 <script>
 import "@fortawesome/fontawesome-free/css/all.css";
-export default defineComponent({
+import axios from "axios";
+export default {
   data() {
     return {
       images: [],
       isDragging: false,
       currentPage: "home",
       folderPaths: [],
+      folderFiles: [],
     };
   },
   methods: {
@@ -136,11 +143,47 @@ export default defineComponent({
     async processFiles(files) {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        this.folderPaths.push(file.webkitRelativePath || file.name);
+        if (file.isDirectory) {
+          // Nếu là một thư mục, thực hiện đọc các file bên trong
+          await this.traverseFileTree(file, "");
+        } else {
+          // Nếu là một file đơn lẻ, thêm đường dẫn vào mảng folderFiles
+          const path = file.webkitRelativePath || file.name;
+          this.folderPaths.push(path);
+
+          // Tiếp tục xử lý file như trước
+          const blob = await this.readFileAsBlob(file);
+          this.folderFiles.push(blob);
+        }
       }
     },
+
+    traverseFileTree(item, path) {
+      if (item.isFile) {
+        // Nếu là một file, đọc dữ liệu và thêm vào mảng folderFiles
+        item.file((file) => {
+          const newFile = new File([file], file.name, {
+            type: file.type,
+            lastModified: file.lastModified,
+          });
+          Object.defineProperty(newFile, "webkitRelativePath", {
+            value: `${path}/${file.name}`,
+          });
+          this.processFiles([newFile]);
+        });
+      } else if (item.isDirectory) {
+        // Nếu là một thư mục, đọc các file bên trong
+        const dirReader = item.createReader();
+        dirReader.readEntries((entries) => {
+          entries.forEach((entry) => {
+            this.traverseFileTree(entry, `${path}/${item.name}`);
+          });
+        });
+      }
+    },
+
     deleteImage(index) {
-      this.folderPaths.splice(index, 1);
+      this.folderFiles.splice(index, 1);
     },
     onDragOver(event) {
       this.isDragging = true;
@@ -148,6 +191,48 @@ export default defineComponent({
     },
     onDragLeave(event) {
       this.isDragging = false;
+    },
+    async uploadFiles() {
+      for (let i = 0; i < this.folderPaths.length; i++) {
+        const file = this.folderPaths[i];
+        const filedata = this.folderFiles[i];
+        // Tạo FormData mới cho mỗi file
+        const formData = new FormData();
+        const blob = new Blob([filedata], { type: file.type });
+        const fileName = "quydz" + file; // Thêm 'quy/' vào phía trước của tên file
+        formData.append("files", blob, fileName); // Thêm file vào FormData với tên file đã chỉ định
+        try {
+          // Gửi yêu cầu tải lên cho mỗi file
+          const response = await axios.post(
+            "http://localhost:8083/upload",
+            formData,
+            {
+              headers: {
+                "Content-Type": "multipart/form-data",
+              },
+            }
+          );
+          console.log("File uploaded successfully:", file.name);
+          console.log("Server response:", response.data);
+        } catch (error) {
+          console.error("Failed to upload file:", file.name);
+          console.error("Error:", error);
+        }
+      }
+    },
+    readFileAsBlob(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function (event) {
+          const arrayBuffer = event.target.result;
+          const blob = new Blob([arrayBuffer], { type: file.type });
+          resolve(blob);
+        };
+        reader.onerror = function (event) {
+          reject(event.target.error);
+        };
+        reader.readAsArrayBuffer(file);
+      });
     },
     async onDrop(event) {
       event.preventDefault();
@@ -160,28 +245,33 @@ export default defineComponent({
         }
       }
     },
-    async traverseFileTree(item, path) {
+    traverseFileTree(item, path) {
       if (item.isFile) {
         item.file((file) => {
-          this.processFiles([file]);
+          const newFile = new File([file], file.name, {
+            type: file.type,
+            lastModified: file.lastModified,
+          });
+          Object.defineProperty(newFile, "webkitRelativePath", {
+            value: `${path}/${file.name}`,
+          });
+          this.processFiles([newFile]);
         });
       } else if (item.isDirectory) {
         const dirReader = item.createReader();
-        dirReader.readEntries(async (entries) => {
-          for (let i = 0; i < entries.length; i++) {
-            await this.traverseFileTree(entries[i], `${path}/${item.name}`);
-          }
-          if (!entries.length) {
-            this.folderPaths.push(`${path}/${item.name}`);
-          }
+        dirReader.readEntries((entries) => {
+          entries.forEach((entry) => {
+            this.traverseFileTree(entry, `${path}/${item.name}`);
+          });
         });
       }
     },
+
     navigateToPage(page) {
       this.currentPage = page;
     },
   },
-});
+};
 </script>
 
 <style>
@@ -227,7 +317,6 @@ export default defineComponent({
   justify-content: center;
   padding-bottom: 15px;
 }
-
 .navbar-vertical li a {
   display: block;
   padding: 10px;
@@ -235,7 +324,6 @@ export default defineComponent({
   color: #353b39;
   font-size: 25px;
 }
-
 .navbar-vertical li a:hover {
   width: 80%;
   display: flex;
@@ -258,7 +346,6 @@ export default defineComponent({
   position: relative;
   margin-right: -35%;
 }
-
 .section-user ul {
   display: flex;
   list-style-type: none;
@@ -267,11 +354,9 @@ export default defineComponent({
   font-size: 24px;
   font-weight: 500;
 }
-
 .section-user ul li {
   margin-right: 10px;
 }
-
 .section-user ul li:last-child {
   margin-right: 0;
 }
@@ -281,7 +366,6 @@ export default defineComponent({
   margin: 0;
   font-size: 20px;
 }
-
 .menu-item-footer {
   display: inline-block;
   margin-right: 20px;
