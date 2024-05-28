@@ -302,4 +302,12 @@ export default {
   border-radius: 5px;
   text-align: center;
 }
+.title-form {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  left: 70px;
+  top: 70px;
+  width: 90%;
+}
 </style>
