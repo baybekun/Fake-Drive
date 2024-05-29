@@ -6,74 +6,50 @@
       </div>
 
       <div class="text">
-        <div class="SignInTitle" align="center">Đăng Kí</div>
-        <div class="subSignInTitle" align="center">
-          <Table></Table>Tạo mới tài khoản<br />
-          để sử dụng <br />
-          SuperCloud
-        </div>
+        <div class="loginTitle" align="center">Đăng Kí</div>
+        <div class="subLoginTitle" align="center">Tạo Mới Tài Khoản</div>
       </div>
     </div>
     <div class="right">
       <div class="sub-content">
         <div class="supercloud" align="center">SuperCloud</div>
-        <Form @submit="handleRegister" :validation-schema="schema">
-          <div class="textfield" name="Name">
-            <Field
-              class="EmailText"
-              type="text"
-              name="txtEmail"
-              placeholder="Họ và Tên"
-            />
-          </div>
-          <div class="textfield" name="Email">
-            <Field
-              class="PasswordText"
-              type="text"
-              name="txtPassword"
-              placeholder="Email"
-            />
-          </div>
-          <div class="textfield" name="Username">
-            <Field
-              class="PasswordText"
-              type="text"
-              name="txtPassword"
-              placeholder="Username"
-            />
-          </div>
-          <div class="textfield" name="Password">
-            <Field
-              class="PasswordText"
-              type="text"
-              name="txtPassword"
-              placeholder="Password"
-            />
-          </div>
-          <div class="non_acc"><a href="/logins">Đã có tài khoản?</a></div>
-          <div class="button">
-            <button
-              class="NextButton"
-              type="submit"
-              name="butNext"
-              :disabled="loading"
-            >
-              <span
-                v-show="loading"
-                class="spinner-border spinner-border-sm"
-              ></span>
-              Sign Up
-            </button>
-          </div>
-
-          <div
-            v-if="message"
-            class="alert"
-            :class="successful ? 'alert-success' : 'alert-danger'"
+        <div class="textfield" name="email">
+          <input
+            class="EmailText"
+            type="text"
+            name="txtEmail"
+            placeholder="Email"
+          />
+        </div>
+        <div class="textfield" name="password">
+          <input
+            class="PasswordText"
+            type="text"
+            name="txtPassword"
+            placeholder="Password"
+          />
+        </div>
+        <div class="textfield" name="cfpassword">
+          <input
+            class="PasswordText"
+            type="text"
+            name="txtCfPassword"
+            placeholder="Confirm Password"
+          />
+        </div>
+        <div class="non_acc">
+          <a href="/">Đã có Tài Khoản?</a>
+        </div>
+        <div class="button">
+          <button
+            class="NextButton"
+            type="submit"
+            name="butNext"
+            @click="navigateToNextPage"
           >
-            {{ message }}
-          </div>
-        </Form>
+            Tiếp
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -81,79 +57,14 @@
 
 <script setup>
 definePageMeta({
-  layout: "logins",
+  layout: "",
 });
 </script>
 <script>
-import { Form, Field, ErrorMessage } from "vee-validate";
-import * as yup from "yup";
-
 export default {
-  name: "register",
-  components: {
-    Form,
-    Field,
-    ErrorMessage,
-  },
-  data() {
-    const schema = yup.object().shape({
-      username: yup
-        .string()
-        .required("Yêu cầu nhập tên người dùng")
-        .min(3, "Ít nhất có 3 kí tự")
-        .max(20, "Nhiều nhất 20 kí tự"),
-      email: yup
-        .string()
-        .required("Yêu cầu nhập email")
-        .email("Email không hợp lệ!")
-        .max(50, "Tối đa không quá 50 kí tự"),
-      password: yup
-        .string()
-        .required("Nhập mật khẩu")
-        .min(6, "Ít nhất có 6 kí tự")
-        .max(40, "Nhiều nhất 40 kí tự"),
-    });
-
-    return {
-      successful: false,
-      loading: false,
-      message: "",
-      schema,
-    };
-  },
-  computed: {
-    loggedIn() {
-      return this.$store.state.auth.status.loggedIn;
-    },
-  },
-  mounted() {
-    if (this.loggedIn) {
-      this.$router.push("/");
-    }
-  },
   methods: {
-    handleRegister(user) {
-      this.message = "";
-      this.successful = false;
-      this.loading = true;
-
-      this.$store.dispatch("auth/register", user).then(
-        (data) => {
-          this.message = data.message;
-          this.successful = true;
-          this.loading = false;
-        },
-        (error) => {
-          this.message =
-            (error.response &&
-              error.response.data &&
-              error.response.data.message) ||
-            error.message ||
-            error.toString();
-          this.successful = false;
-          this.loading = false;
-        }
-      );
+    navigateToNextPage() {
+      this.$router.push("/");
     },
   },
 };
@@ -163,7 +74,7 @@ export default {
 .Wrap {
   background-color: white;
   width: 1254px;
-  height: 844px;
+  height: 635px;
   position: absolute;
   top: 50%;
   left: 50%;
@@ -183,38 +94,43 @@ export default {
 .right {
   float: right;
   width: 839px;
-  height: 759px;
+  height: 578px;
   background-color: #efefef;
-  margin-top: 40px;
+  margin-top: 25px;
   margin-right: 49px;
   border-radius: 30px;
-  box-shadow: 0px 0px 10px 5px rgba(0, 0, 0, 0.1);
+  box-shadow: 0px 0px 10px 5px rgba(0, 0, 0, 0.1); /* Tạo hiệu ứng đổ bóng */
 }
-.logof {
+.logo {
+  margin-left: auto;
   background-color: white;
   border-radius: 30px;
 }
 
-.SignInTitle {
-  font-size: 62px;
-  font-family: "Inria Serif", serif;
+.loginTitle {
+  font-size: 62px; /* Đặt kích thước font chữ */
+  font-family: "Inria Serif", serif; /* Sử dụng font Inria Serif */
+  padding-bottom: 20px;
 }
-.subSignInTitle {
+.subLoginTitle {
   font-size: 32px;
-  font-family: "Inria Serif", serif;
+  font-family: "Inria Serif", serif; /* Sử dụng font Inria Serif */
   color: #696969;
   float: left;
   margin-left: 45px;
-  margin-top: 15px;
 }
 
 .supercloud {
-  font-size: 68px;
-  font-family: "Inria Serif";
+  font-size: 68px; /* Đặt kích thước font chữ */
+  font-family: "Inria Serif"; /* Sử dụng font Inria Serif */
   margin-top: 10px;
-  background: linear-gradient(to bottom, #697b83, #062537);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  background: linear-gradient(
+    to bottom,
+    #697b83,
+    #062537
+  ); /* Gradient màu từ trắng đến #062537 từ trên xuống dưới */
+  -webkit-background-clip: text; /* Cho phép áp dụng background cho text */
+  -webkit-text-fill-color: transparent; /* Đặt màu chữ trong suốt */
 }
 .textfiled input {
   background-color: aqua;
@@ -252,17 +168,22 @@ export default {
   font-family: "Inria Serif";
   padding-left: 10px;
 }
-
-.non_acc {
+.forgot_pass {
   font-size: 24px;
   font-family: "Inria Serif";
   margin-top: 20px;
-  margin-left: 380px;
+  margin-left: 65px;
+  color: #062537;
+}
+.non_acc {
+  font-size: 24px;
+  font-family: "Inria Serif";
+  margin-top: 33px;
+  margin-left: 50%;
   color: #062537;
   width: fit-content;
   height: fit-content;
   float: left;
-  margin-top: 70px;
 }
 .button {
   width: fit-content;
@@ -279,7 +200,14 @@ export default {
   font-size: 24px;
   margin-right: 50px;
   margin-left: 626px;
-  float: right;
   margin-top: -50px;
+  float: right;
+}
+</style>
+<style>
+.logof {
+  width: 264px;
+  height: 208px;
+  margin-top: 32px;
 }
 </style>

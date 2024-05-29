@@ -19,16 +19,7 @@ definePageMeta({
           <div class="searchs pad">
             <SearchPackage />
           </div>
-          <div class="login-register pad">
-            <div class="section-user">
-              <ul>
-                <li>
-                  <i class="fa-regular fa-circle-user"></i>
-                  <NuxtLink to="/logins"> Log Out </NuxtLink>
-                </li>
-              </ul>
-            </div>
-          </div>
+          <UserDropDown />
         </nav>
       </div>
     </header>
@@ -38,12 +29,12 @@ definePageMeta({
           <div class="nav-bar col-6">
             <ul class="navbar-vertical">
               <li :class="{ active: currentPage === 'home' }">
-                <NuxtLink to="/" @click="navigateToPage('home')"
+                <NuxtLink to="/bodymain" @click="navigateToPage('home')"
                   >Trang Chủ</NuxtLink
                 >
               </li>
-              <li :class="{ active: currentPage === 'about' }">
-                <NuxtLink to="/about" @click="navigateToPage('about')"
+              <li :class="{ active: currentPage === 'recently' }">
+                <NuxtLink to="/recently" @click="navigateToPage('recently')"
                   >Gần Đây</NuxtLink
                 >
               </li>
@@ -60,7 +51,6 @@ definePageMeta({
             </ul>
           </div>
           <div class="show-main col-8">
-            <!-- Hiển thị file -->
             <div class="cards">
               <div class="title-form">
                 <p>Tên</p>
@@ -73,12 +63,10 @@ definePageMeta({
                 :key="index"
                 class="file-item"
               >
-                <p>{{ file.name }}</p>
+                <p @click="openModal(index)">{{ file.name }}</p>
                 <p>{{ file.date }}</p>
                 <p>{{ file.size }}</p>
-
                 <button @click="toggleDropdown(index)">:</button>
-                <!-- Dropdown -->
                 <div v-if="file.showDropdown" class="dropdown">
                   <ul>
                     <li><button @click="editFile(index)">Chia Sẻ</button></li>
@@ -112,58 +100,130 @@ definePageMeta({
         </div>
       </div>
     </footer>
+    <Modal v-if="isModalOpen" @close="isModalOpen = false">
+      <div class="modal-content">
+        <div class="title-modal">
+          <h3>Files in {{ selectedFolderName }}</h3>
+        </div>
+        <div class="title-form">
+          <p>Tên</p>
+          <p>Ngày</p>
+          <p>Size</p>
+          <p></p>
+        </div>
+        <div
+          v-for="(file, index) in selectedFiles"
+          :key="index"
+          class="file-item"
+        >
+          <p>{{ file.name }}</p>
+          <p>{{ file.date }}</p>
+          <p>{{ file.size }}</p>
+          <button @click="toggleDropdownModal(index)">:</button>
+          <div v-if="file.showDropdown" class="dropdown">
+            <ul>
+              <li><button @click="editFileModal(index)">Chia Sẻ</button></li>
+              <hr />
+              <li><button @click="deleteFileModal(index)">Xóa</button></li>
+              <hr />
+              <li><button @click="renameFileModal(index)">Đổi tên</button></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </Modal>
   </div>
 </template>
+
 <script>
-import "@fortawesome/fontawesome-free/css/all.css";
+import { ref, onMounted, onUnmounted } from "vue";
+import Modal from "../../components/modal.vue";
 import axios from "axios";
 
-export default {
-  data() {
-    return {
-      currentPage: "mydrive",
-      uploadedFiles: [
-        { name: "minh1", date: "10/3/2024", size: "20kb" },
-        { name: "minh2", date: "1/3/2024", size: "1kb" },
-      ], // Thêm mảng để lưu trữ thông tin về các file đã tải lên
-    };
+const currentPage = ref("mydrive");
+const uploadedFiles = ref([
+  {
+    name: "minh1",
+    date: "10/3/2024",
+    size: "20kb",
+    showDropdown: false,
+    files: [
+      { name: "file a", date: "11/3/2024", size: "5kb", showDropdown: false },
+      { name: "flie b", date: "12/3/2024", size: "10kb", showDropdown: false },
+      { name: "file c", date: "13/3/2024", size: "15kb", showDropdown: false },
+    ],
   },
-  async mounted() {
-    // Gửi yêu cầu GET để lấy danh sách các file đã tải lên
-    try {
-      const response = await axios.get("/api/uploaded-files");
-      this.uploadedFiles = response.data.map((file) => ({
-        name: file.name,
-        date: file.date,
-        size: file.size,
-      }));
-    } catch (error) {
-      console.error("Failed to fetch uploaded files:", error);
-    }
+  {
+    name: "minh2",
+    date: "1/3/2024",
+    size: "1kb",
+    showDropdown: false,
+    files: [
+      { name: "file d", date: "2/3/2024", size: "2kb", showDropdown: false },
+      { name: "file e", date: "3/3/2024", size: "4kb", showDropdown: false },
+      { name: "file f", date: "4/3/2024", size: "6kb", showDropdown: false },
+    ],
   },
-  methods: {
-    navigateToPage(page) {
-      this.currentPage = page;
-    },
-    toggleDropdown(index) {
-      // Đảo ngược trạng thái hiển thị dropdown cho file tương ứng
-      this.uploadedFiles[index].showDropdown =
-        !this.uploadedFiles[index].showDropdown;
-    },
-    editFile(index) {
-      // Xử lý tùy chọn "Chia Sẻ"
-      console.log("Chia Sẻ", this.uploadedFiles[index]);
-    },
-    deleteFile(index) {
-      // Xử lý tùy chọn "Xóa"
-      console.log("Xóa file", this.uploadedFiles[index]);
-    },
-    renameFile(index) {
-      // Xử lý tùy chọn "Đổi tên"
-      console.log("Đổi tên file", this.uploadedFiles[index]);
-    },
-  },
+]);
+const selectedFiles = ref([]);
+const selectedFolderName = ref("");
+const isModalOpen = ref(false);
+
+const toggleDropdown = (index) => {
+  // Đóng tất cả các dropdown khác
+  uploadedFiles.value.forEach((file, i) => {
+    if (i !== index) file.showDropdown = false;
+  });
+  // Đảo ngược trạng thái hiển thị dropdown cho file tương ứng
+  uploadedFiles.value[index].showDropdown =
+    !uploadedFiles.value[index].showDropdown;
 };
+const toggleDropdownModal = (index) => {
+  // Đóng tất cả các dropdown khác
+  selectedFiles.value.forEach((file, i) => {
+    if (i !== index) file.showDropdown = false;
+  });
+  // Đảo ngược trạng thái hiển thị dropdown cho file tương ứng
+  selectedFiles.value[index].showDropdown =
+    !selectedFiles.value[index].showDropdown;
+};
+const handleClickOutside = (event) => {
+  // Đóng dropdown nếu click ra ngoài
+  if (!event.target.closest(".dropdown")) {
+    uploadedFiles.value.forEach((file) => {
+      file.showDropdown = false;
+    });
+  }
+};
+
+const editFile = (index) => {
+  // Xử lý tùy chọn "Chia Sẻ"
+  console.log("Chia Sẻ", uploadedFiles.value[index]);
+};
+
+const deleteFile = (index) => {
+  // Xử lý tùy chọn "Xóa"
+  console.log("Xóa file", uploadedFiles.value[index]);
+};
+
+const renameFile = (index) => {
+  // Xử lý tùy chọn "Đổi tên"
+  console.log("Đổi tên file", uploadedFiles.value[index]);
+};
+
+const openModal = (index) => {
+  selectedFiles.value = uploadedFiles.value[index].files;
+  selectedFolderName.value = uploadedFiles.value[index].name;
+  isModalOpen.value = true;
+};
+
+onMounted(() => {
+  document.addEventListener("click", handleClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener("click", handleClickOutside);
+});
 </script>
 <style>
 .header-name {
@@ -268,7 +328,7 @@ export default {
   min-height: 500px;
 }
 .pad {
-  padding-right: 10%;
+  padding-right: 14%;
 }
 /* từng khối hiển thị ở đây */
 .file-item {
@@ -309,5 +369,9 @@ export default {
   left: 70px;
   top: 70px;
   width: 90%;
+}
+.title-modal {
+  font-size: 20px;
+  font-weight: 600;
 }
 </style>

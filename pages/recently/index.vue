@@ -79,11 +79,10 @@ definePageMeta({
 </template>
 <script>
 import "@fortawesome/fontawesome-free/css/all.css";
-
 export default {
   data() {
     return {
-      currentPage: "shares",
+      currentPage: "recently",
     };
   },
   methods: {
